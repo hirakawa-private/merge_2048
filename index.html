@@ -248,6 +248,31 @@
 
     setupGrid();
     restart();
+
+// スワイプ操作の追加
+let touchStartX = 0;
+let touchStartY = 0;
+
+document.addEventListener("touchstart", function(e) {
+  const touch = e.touches[0];
+  touchStartX = touch.clientX;
+  touchStartY = touch.clientY;
+}, false);
+
+document.addEventListener("touchend", function(e) {
+  const touch = e.changedTouches[0];
+  const deltaX = touch.clientX - touchStartX;
+  const deltaY = touch.clientY - touchStartY;
+
+  if (Math.abs(deltaX) > Math.abs(deltaY)) {
+    if (deltaX > 30) move("right");
+    else if (deltaX < -30) move("left");
+  } else {
+    if (deltaY > 30) move("down");
+    else if (deltaY < -30) move("up");
+  }
+}, false);
+
   </script>
 </body>
 </html>
