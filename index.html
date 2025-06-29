@@ -1,0 +1,253 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Evolution 2048 - Styled & Centered</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f0f8ff, #e6e6fa);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #container {
+      display: flex;
+      background: #ffffffcc;
+      border-radius: 16px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+      padding: 20px;
+      gap: 20px;
+    }
+    #game {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #score {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      background: #4caf50;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #grid-wrapper {
+      position: relative;
+      width: 350px;
+      height: 350px;
+      margin-top: 20px;
+    }
+    #grid-background {
+      position: absolute;
+      width: 350px;
+      height: 350px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: repeat(4, 1fr);
+      gap: 5px;
+      z-index: 0;
+    }
+    .cell-bg {
+      background: #ccc;
+      border-radius: 6px;
+    }
+    #grid {
+      position: absolute;
+      width: 350px;
+      height: 350px;
+      z-index: 1;
+    }
+    .tile {
+      width: 80px;
+      height: 80px;
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      border-radius: 6px;
+      color: #000;
+      transition: all 0.3s ease;
+    }
+    #legend {
+      min-width: 180px;
+      background: #fafafa;
+      border-left: 2px solid #ddd;
+      padding: 10px;
+      border-radius: 12px;
+    }
+    #legend h3 {
+      margin-top: 0;
+      font-size: 18px;
+      text-align: center;
+    }
+    #legend div {
+      margin: 5px 0;
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="game">
+      <div id="score">Score: 0</div>
+      <button onclick="restart()">🔁 Restart</button>
+      <div id="grid-wrapper">
+        <div id="grid-background"></div>
+        <div id="grid"></div>
+      </div>
+    </div>
+    <div id="legend">
+      <h3>進化図鑑</h3>
+      <div id="legend-list"></div>
+    </div>
+  </div>
+
+  <script>
+    const grid = document.getElementById("grid");
+    const background = document.getElementById("grid-background");
+    const scoreEl = document.getElementById("score");
+    const legendList = document.getElementById("legend-list");
+
+    const animals = ["", "🦠", "🐜", "🦎", "🐭", "🐰", "🦝", "🐗", "🐻", "🦁", "🦍"];
+    const colors = ["#FFFAFA", "#FFF5E1", "#FADADD", "#FFD1DC", "#E6E6FA", "#FFB6C1", "#D0F0C0", "#B0E0E6", "#DCDCDC", "#C8A2C8"];
+
+    let board = [];
+    let discovered = JSON.parse(localStorage.getItem("discoveredLevels") || "[]");
+    while (discovered.length < 10) discovered.push(false);
+    let score = 0;
+
+    function setupGrid() {
+      background.innerHTML = "";
+      for (let i = 0; i < 16; i++) {
+        const div = document.createElement("div");
+        div.className = "cell-bg";
+        background.appendChild(div);
+      }
+    }
+
+    function drawLegend() {
+      legendList.innerHTML = "";
+      for (let i = 0; i < 10; i++) {
+        const div = document.createElement("div");
+        div.style.background = colors[i];
+        div.textContent = discovered[i] ? `Lv${i + 1}: ${animals[i + 1]}` : `Lv${i + 1}: ???`;
+        legendList.appendChild(div);
+      }
+    }
+
+    function initBoard() {
+      board = Array.from({ length: 4 }, () => Array(4).fill(0));
+      placeRandom(); placeRandom();
+    }
+
+    function restart() {
+      initBoard();
+      score = 0;
+      update();
+    }
+
+    function placeRandom() {
+      const empty = [];
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+          if (board[r][c] === 0) empty.push([r, c]);
+        }
+      }
+      if (empty.length === 0) return;
+      const [r, c] = empty[Math.floor(Math.random() * empty.length)];
+      board[r][c] = 1;
+    }
+
+    function update() {
+      grid.innerHTML = "";
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+          const lv = board[r][c];
+          if (lv > 0) {
+            const div = document.createElement("div");
+            div.className = "tile";
+            div.style.top = `${r * 87.5}px`;
+            div.style.left = `${c * 87.5}px`;
+            div.style.background = colors[lv - 1] || "#ccc";
+            div.textContent = animals[lv] || lv;
+            grid.appendChild(div);
+            discovered[lv - 1] = true;
+          }
+        }
+      }
+      drawLegend();
+      localStorage.setItem("discoveredLevels", JSON.stringify(discovered));
+      scoreEl.textContent = "Score: " + score;
+    }
+
+    function slide(arr) {
+      let filtered = arr.filter(n => n);
+      for (let i = 0; i < filtered.length - 1; i++) {
+        if (filtered[i] === filtered[i + 1]) {
+          filtered[i]++;
+          score += 2 ** filtered[i];
+          filtered[i + 1] = 0;
+        }
+      }
+      return filtered.filter(n => n).concat(Array(4 - filtered.filter(n => n).length).fill(0));
+    }
+
+    function move(dir) {
+      let changed = false;
+      if (dir === "left" || dir === "right") {
+        for (let r = 0; r < 4; r++) {
+          let row = board[r].slice();
+          if (dir === "right") row.reverse();
+          let slided = slide(row);
+          if (dir === "right") slided.reverse();
+          if (board[r].toString() !== slided.toString()) {
+            board[r] = slided;
+            changed = true;
+          }
+        }
+      } else {
+        for (let c = 0; c < 4; c++) {
+          let col = board.map(row => row[c]);
+          if (dir === "down") col.reverse();
+          let slided = slide(col);
+          if (dir === "down") slided.reverse();
+          for (let r = 0; r < 4; r++) {
+            if (board[r][c] !== slided[r]) {
+              board[r][c] = slided[r];
+              changed = true;
+            }
+          }
+        }
+      }
+      if (changed) {
+        placeRandom();
+        update();
+      }
+    }
+
+    window.addEventListener("keydown", e => {
+      if (e.key === "ArrowUp") move("up");
+      if (e.key === "ArrowDown") move("down");
+      if (e.key === "ArrowLeft") move("left");
+      if (e.key === "ArrowRight") move("right");
+    });
+
+    setupGrid();
+    restart();
+  </script>
+</body>
+</html>
